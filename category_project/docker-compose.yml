@@ -1,0 +1,33 @@
+version: '2.4'
+
+services:
+
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env
+
+  web:
+    build: .
+    env_file: .env
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py createsuperuser --noinput ||
+             echo 'Superuser already exists' &&
+             python manage.py collectstatic --noinput &&
+             gunicorn category_project.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/code
+      - static_volume:/code/staticfiles
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+    depends_on:
+      - db
+
+
+volumes:
+  postgres_data:
+  static_volume: 
