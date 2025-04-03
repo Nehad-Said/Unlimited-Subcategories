@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Selection</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        // Set CSRF token as a JavaScript variable:
+        var csrfToken = '{{ csrf_token }}';
+    </script>
+    
+    <div id="categories">
+        {% for category in categories %}
+            <div>
+                <input type="checkbox" name="category" value="{{ category.id }}" onchange="handleCategorySelection(this);">
+                {{ category.name }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="subcategories"></div>
+
+    <script>
+        function handleCategorySelection(checkbox) {
+            var categoryId = checkbox.value;
+            var container = $(checkbox).closest('div');
+
+            if (checkbox.checked) {
+                // Assume subcategories are predefined to be created if not exist
+                var predefinedSubcategories = ['Sub Category 1', 'Sub Category 2'];
+
+                $.ajax({
+                    type: 'POST',
+                    url: 'get-subcategories/',
+                    headers: {
+                    'X-CSRFToken': csrfToken  // Include CSRF token in the request headers
+                    },
+                    data: {
+                        'parent_id': categoryId,
+                        'subcategory_names': predefinedSubcategories.join(',')
+                    },
+                    success: function(data) {
+                        var subcategoriesDiv = $('<div>').addClass('subcategories');
+                        container.append(subcategoriesDiv);
+
+                        data.subcategories.forEach(function(subcategory) {
+                            var subCheckbox = $('<input type="checkbox" onchange="handleCategorySelection(this)">')
+                                .attr('value', subcategory.id);
+                            var label = $('<label>').text(subcategory.name);
+                            subcategoriesDiv.append(subCheckbox);
+                            subcategoriesDiv.append(label);
+                            subcategoriesDiv.append('<br>');
+                        });
+                    }
+                });
+            } else {
+                container.find('.subcategories').remove();
+            }
+        }
+
+    </script>
+</body>
+</html>
